@@ -1,0 +1,44 @@
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+
+# Python caching & logs
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# IDE / Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Environment variables & secrets (important!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Node.js dependencies
+node_modules/
+jspm_packages/
+
+# Production build outputs
+dist/
+dist-ssr/
+out/
+build/
+.tempmediaStorage/
+
+# System / OS files
+.DS_Store
+Thumbs.db
+desktop.ini
