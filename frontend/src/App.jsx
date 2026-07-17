@@ -14,6 +14,8 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [dbStatus, setDbStatus] = useState('connecting');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [towns, setTowns] = useState([]);
+  const [selectedTown, setSelectedTown] = useState('');
   
   // Dashboard states
   const [kpis, setKpis] = useState({
@@ -41,15 +43,32 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Fetch Dashboard details on mount
+  // Fetch towns list on mount
+  useEffect(() => {
+    const fetchTowns = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/towns`);
+        if (res.ok) {
+          const data = await res.json();
+          setTowns(data);
+        }
+      } catch (err) {
+        console.error('Error fetching towns list:', err);
+      }
+    };
+    fetchTowns();
+  }, []);
+
+  // Fetch Dashboard details when selected town changes
   useEffect(() => {
     const fetchData = async () => {
       try {
         setDbStatus('connecting');
-        const kpiRes = await fetch(`${API_URL}/api/kpis`);
+        const queryParams = selectedTown ? `?town=${encodeURIComponent(selectedTown)}` : '';
+        const kpiRes = await fetch(`${API_URL}/api/kpis${queryParams}`);
         const kpiJson = await kpiRes.json();
         
-        const chartRes = await fetch(`${API_URL}/api/chart-data`);
+        const chartRes = await fetch(`${API_URL}/api/chart-data${queryParams}`);
         const chartJson = await chartRes.json();
         
         if (kpiRes.ok && chartRes.ok) {
@@ -65,7 +84,7 @@ export default function App() {
       }
     };
     fetchData();
-  }, []);
+  }, [selectedTown]);
 
   const handleSendMessage = async (text) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -239,6 +258,33 @@ export default function App() {
         <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6 md:gap-8">
           {activeTab === 'dashboard' && (
             <>
+              {/* Town Filter Control */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-card border border-border backdrop-blur-md">
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="text-sm font-semibold text-foreground">Filter by Town</h3>
+                  <p className="text-xs text-muted-foreground">Dynamically updates KPI metrics and charts based on geographic location</p>
+                </div>
+                <div className="relative min-w-[220px] w-full sm:w-auto">
+                  <select
+                    value={selectedTown}
+                    onChange={(e) => setSelectedTown(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all cursor-pointer shadow-sm hover:border-muted-foreground/30 appearance-none pr-9 font-medium"
+                  >
+                    <option value="">All Towns</option>
+                    {towns.map((town) => (
+                      <option key={town} value={town}>
+                        {town}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-muted-foreground">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
               <KPICards kpis={kpis} />
               <DashboardCharts chartData={chartData} theme={theme} />
             </>
