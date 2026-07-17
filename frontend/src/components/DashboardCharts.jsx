@@ -161,7 +161,6 @@ export default function DashboardCharts({ chartData, theme }) {
   // Option 3: Flat Type Pie
   const flatTypesOption = {
     backgroundColor: 'transparent',
-    color: flatTypes.map(d => flatTypeColors[d.label] || '#9ca3af'),
     tooltip: {
       trigger: 'item',
       formatter: '{b}: {c} flats ({d}%)'
@@ -189,7 +188,10 @@ export default function DashboardCharts({ chartData, theme }) {
         labelLine: { show: false },
         data: flatTypes.map(d => ({
           name: d.label,
-          value: d.value
+          value: d.value,
+          itemStyle: {
+            color: flatTypeColors[d.label] || '#9ca3af'
+          }
         }))
       }
     ]
@@ -201,7 +203,6 @@ export default function DashboardCharts({ chartData, theme }) {
 
   const flatTypesAcrossYearsOption = {
     backgroundColor: 'transparent',
-    color: flatTypesList.map(type => flatTypeColors[type] || '#9ca3af'),
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' }
@@ -241,6 +242,9 @@ export default function DashboardCharts({ chartData, theme }) {
         name: type,
         type: 'bar',
         stack: 'total',
+        itemStyle: {
+          color: flatTypeColors[type] || '#9ca3af'
+        },
         emphasis: { focus: 'series' },
         data: data
       };
