@@ -154,25 +154,19 @@ export default function DashboardCharts({ chartData, theme }) {
       trigger: 'item',
       formatter: '{b}: {c} flats ({d}%)'
     },
-    legend: isMobile
-      ? {
-        orient: 'horizontal',
-        bottom: '0%',
-        left: 'center',
-        textStyle: { color: textColor, fontFamily: 'Outfit', fontSize: 10 }
-      }
-      : {
-        orient: 'vertical',
-        right: '5%',
-        top: 'center',
-        textStyle: { color: textColor, fontFamily: 'Outfit' }
-      },
+    legend: {
+      orient: 'horizontal',
+      bottom: '0%',
+      left: 'center',
+      type: 'scroll',
+      textStyle: { color: textColor, fontFamily: 'Outfit', fontSize: 10 }
+    },
     series: [
       {
         name: 'Flat Types',
         type: 'pie',
-        radius: isMobile ? ['30%', '55%'] : ['45%', '75%'],
-        center: isMobile ? ['50%', '42%'] : ['35%', '50%'],
+        radius: ['35%', '58%'],
+        center: ['50%', '40%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 8,
@@ -495,7 +489,7 @@ export default function DashboardCharts({ chartData, theme }) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-card/60 border-border backdrop-blur-md md:col-span-1">
           <CardHeader className="border-b border-border pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
@@ -508,7 +502,7 @@ export default function DashboardCharts({ chartData, theme }) {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 border-border backdrop-blur-md md:col-span-2">
+        <Card className="bg-card/60 border-border backdrop-blur-md md:col-span-3">
           <CardHeader className="border-b border-border pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <Layers size={18} className="text-muted-foreground" />
