@@ -49,30 +49,47 @@ def json_safe(value):
         return float(value)
     return value
 
+@app.route('/api/towns', methods=['GET'])
+def get_towns():
+    """Fetch distinct list of towns from the dataset."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT town FROM hdb.hdb_resale_prices ORDER BY town;")
+            towns = [row[0] for row in cur.fetchall()]
+            return jsonify(towns)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
 @app.route('/api/kpis', methods=['GET'])
 def get_kpis():
-    """Fetch default aggregated stats for KPI cards."""
+    """Fetch default aggregated stats for KPI cards, optionally filtered by town."""
+    town = request.args.get('town')
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Running aggregated metrics in a single scan
-            cur.execute("""
+            query = """
                 SELECT 
                     COUNT(*)::integer as total_transactions,
                     ROUND(AVG(resale_price))::double precision as avg_price,
                     SUM(resale_price)::double precision as total_volume,
                     ROUND(AVG(floor_area_sqm), 1)::double precision as avg_area
-                FROM hdb.hdb_resale_prices;
-            """)
+                FROM hdb.hdb_resale_prices
+            """
+            params = []
+            if town:
+                query += " WHERE town = %s"
+                params.append(town)
+            cur.execute(query, params)
             kpis = cur.fetchone()
             
-            # Fetch a sample to calculate changes or set mock indicators
-            # (e.g. comparing 2026 average to overall or setting standard rates)
             return jsonify({
-                'total_transactions': kpis['total_transactions'],
-                'avg_price': kpis['avg_price'],
-                'total_volume': kpis['total_volume'],
-                'avg_area': kpis['avg_area']
+                'total_transactions': kpis['total_transactions'] or 0,
+                'avg_price': kpis['avg_price'] or 0.0,
+                'total_volume': kpis['total_volume'] or 0.0,
+                'avg_area': kpis['avg_area'] or 0.0
             })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -81,71 +98,90 @@ def get_kpis():
 
 @app.route('/api/chart-data', methods=['GET'])
 def get_chart_data():
-    """Fetch pre-aggregated datasets for ECharts visualization."""
+    """Fetch pre-aggregated datasets for ECharts visualization, optionally filtered by town."""
+    town = request.args.get('town')
     conn = get_db_connection()
     try:
         chart_data = {}
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             # 1. Price trend by year (average price and transaction volume)
-            cur.execute("""
+            trend_query = """
                 SELECT 
                     EXTRACT(YEAR FROM month)::integer as label,
                     ROUND(AVG(resale_price))::double precision as avg_price,
                     COUNT(*)::integer as txn_count,
                     ROUND(AVG(resale_price / floor_area_sqm))::double precision as avg_price_per_sqm
                 FROM hdb.hdb_resale_prices
-                GROUP BY label
-                ORDER BY label;
-            """)
+            """
+            trend_params = []
+            if town:
+                trend_query += " WHERE town = %s"
+                trend_params.append(town)
+            trend_query += " GROUP BY label ORDER BY label;"
+            cur.execute(trend_query, trend_params)
             chart_data['trend'] = [dict(row) for row in cur.fetchall()]
 
             # 2. Top 12 towns by average price
-            cur.execute("""
+            towns_query = """
                 SELECT 
                     town as label,
                     ROUND(AVG(resale_price))::double precision as avg_price,
                     COUNT(*)::integer as txn_count
                 FROM hdb.hdb_resale_prices
-                GROUP BY town
-                ORDER BY avg_price DESC
-                LIMIT 12;
-            """)
+            """
+            towns_params = []
+            if town:
+                towns_query += " WHERE town = %s"
+                towns_params.append(town)
+            towns_query += " GROUP BY town ORDER BY avg_price DESC LIMIT 12;"
+            cur.execute(towns_query, towns_params)
             chart_data['towns'] = [dict(row) for row in cur.fetchall()]
 
             # 3. Flat Type volume breakdown
-            cur.execute("""
+            flat_types_query = """
                 SELECT 
                     flat_type as label,
                     COUNT(*)::integer as value,
                     ROUND(AVG(resale_price))::double precision as avg_price
                 FROM hdb.hdb_resale_prices
-                GROUP BY flat_type
-                ORDER BY value DESC;
-            """)
+            """
+            flat_types_params = []
+            if town:
+                flat_types_query += " WHERE town = %s"
+                flat_types_params.append(town)
+            flat_types_query += " GROUP BY flat_type ORDER BY value DESC;"
+            cur.execute(flat_types_query, flat_types_params)
             chart_data['flat_types'] = [dict(row) for row in cur.fetchall()]
 
             # 4. Flat Model distribution (top 8)
-            cur.execute("""
+            flat_models_query = """
                 SELECT 
                     flat_model as label,
                     COUNT(*)::integer as value
                 FROM hdb.hdb_resale_prices
-                GROUP BY flat_model
-                ORDER BY value DESC
-                LIMIT 8;
-            """)
+            """
+            flat_models_params = []
+            if town:
+                flat_models_query += " WHERE town = %s"
+                flat_models_params.append(town)
+            flat_models_query += " GROUP BY flat_model ORDER BY value DESC LIMIT 8;"
+            cur.execute(flat_models_query, flat_models_params)
             chart_data['flat_models'] = [dict(row) for row in cur.fetchall()]
 
             # 5. Flat Type transactions across years
-            cur.execute("""
+            flat_types_by_year_query = """
                 SELECT 
                     EXTRACT(YEAR FROM month)::integer as year,
                     flat_type,
                     COUNT(*)::integer as txn_count
                 FROM hdb.hdb_resale_prices
-                GROUP BY year, flat_type
-                ORDER BY year ASC, flat_type ASC;
-            """)
+            """
+            flat_types_by_year_params = []
+            if town:
+                flat_types_by_year_query += " WHERE town = %s"
+                flat_types_by_year_params.append(town)
+            flat_types_by_year_query += " GROUP BY year, flat_type ORDER BY year ASC, flat_type ASC;"
+            cur.execute(flat_types_by_year_query, flat_types_by_year_params)
             chart_data['flat_types_by_year'] = [dict(row) for row in cur.fetchall()]
 
             return jsonify(chart_data)
