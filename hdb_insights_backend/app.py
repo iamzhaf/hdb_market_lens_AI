@@ -70,24 +70,38 @@ def get_kpis():
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            query = """
+            # 1. Fetch overall KPIs: total transactions, total volume, and average floor area
+            overall_query = """
                 SELECT 
                     COUNT(*)::integer as total_transactions,
-                    ROUND(AVG(resale_price))::double precision as avg_price,
                     SUM(resale_price)::double precision as total_volume,
                     ROUND(AVG(floor_area_sqm), 1)::double precision as avg_area
                 FROM hdb.hdb_resale_prices
             """
             params = []
             if town:
-                query += " WHERE town = %s"
+                overall_query += " WHERE town = %s"
                 params.append(town)
-            cur.execute(query, params)
+            cur.execute(overall_query, params)
             kpis = cur.fetchone()
+            
+            # 2. Fetch last 6 months average resale price
+            avg_price_query = """
+                SELECT 
+                    ROUND(AVG(resale_price))::double precision as avg_price
+                FROM hdb.hdb_resale_prices
+                WHERE month >= (SELECT MAX(month) FROM hdb.hdb_resale_prices) - INTERVAL '5 months'
+            """
+            avg_params = []
+            if town:
+                avg_price_query += " AND town = %s"
+                avg_params.append(town)
+            cur.execute(avg_price_query, avg_params)
+            avg_price_row = cur.fetchone()
             
             return jsonify({
                 'total_transactions': kpis['total_transactions'] or 0,
-                'avg_price': kpis['avg_price'] or 0.0,
+                'avg_price': avg_price_row['avg_price'] or 0.0,
                 'total_volume': kpis['total_volume'] or 0.0,
                 'avg_area': kpis['avg_area'] or 0.0
             })
