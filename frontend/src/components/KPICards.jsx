@@ -59,6 +59,13 @@ export default function KPICards({ kpis }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {cards.map((card, i) => {
         const Icon = card.icon;
+        const isNegative = card.trend.startsWith('-');
+        const isPositive = card.trend.startsWith('+');
+        const trendColor = isNegative 
+          ? 'text-rose-500 font-semibold' 
+          : isPositive 
+          ? 'text-emerald-500 font-semibold' 
+          : 'text-muted-foreground font-semibold';
         return (
           <Card
             key={i}
@@ -74,8 +81,8 @@ export default function KPICards({ kpis }) {
               <div className="text-3xl font-bold tracking-tight mb-1 text-foreground">
                 {card.value}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="text-emerald-500 font-semibold">{card.trend}</span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className={trendColor}>{card.trend}</span>
                 <span>{card.meta}</span>
               </div>
             </CardContent>
