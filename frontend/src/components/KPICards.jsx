@@ -22,10 +22,10 @@ export default function KPICards({ kpis }) {
 
   const cards = [
     {
-      title: 'Total Transactions',
-      value: formatNum(kpis.total_transactions),
-      meta: 'Overall volume',
-      trend: '+4.2% MoM',
+      title: 'Month To Date Transactions',
+      value: formatNum(kpis.mtd_transactions),
+      meta: 'vs same period last year',
+      trend: `${kpis.mtd_yoy_change >= 0 ? '+' : ''}${kpis.mtd_yoy_change.toFixed(1)}%`,
       icon: Activity,
       accent: 'accent-indigo'
     },

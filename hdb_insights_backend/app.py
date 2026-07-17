@@ -99,9 +99,59 @@ def get_kpis():
                 avg_params.append(town)
             cur.execute(avg_price_sqm_query, avg_params)
             avg_price_sqm_row = cur.fetchone()
+
+            # 3. Calculate Month To Date (MTD) Transactions & Same Period Last Year difference
+            cur.execute("SELECT MAX(month) as max_m FROM hdb.hdb_resale_prices;")
+            max_m_row = cur.fetchone()
+            max_m = max_m_row['max_m'] if max_m_row else None
+
+            mtd_txns = 0
+            mtd_yoy_change = 0.0
+
+            if max_m:
+                counts_query = """
+                    SELECT 
+                        COUNT(CASE WHEN month = %s THEN 1 END)::integer as mtd_txns,
+                        COUNT(CASE WHEN month = %s - INTERVAL '1 year' THEN 1 END)::integer as last_year_txns
+                    FROM hdb.hdb_resale_prices
+                """
+                counts_params = [max_m, max_m]
+                if town:
+                    counts_query += " WHERE town = %s"
+                    counts_params.append(town)
+                cur.execute(counts_query, counts_params)
+                counts_row = cur.fetchone()
+                
+                mtd_txns = counts_row['mtd_txns'] or 0
+                last_year_txns = counts_row['last_year_txns'] or 0
+
+                # Proportional scaling for same period last year if month is incomplete
+                from datetime import datetime
+                import calendar
+                today = datetime.now().date()
+                
+                is_current_month_active = (
+                    max_m.year == today.year and 
+                    max_m.month == today.month
+                )
+                
+                if is_current_month_active:
+                    day_of_month = today.day
+                    days_in_month = calendar.monthrange(today.year, today.month)[1]
+                    scale_factor = day_of_month / days_in_month
+                    adjusted_last_year_txns = last_year_txns * scale_factor
+                else:
+                    adjusted_last_year_txns = float(last_year_txns)
+                
+                if adjusted_last_year_txns > 0:
+                    mtd_yoy_change = ((mtd_txns - adjusted_last_year_txns) / adjusted_last_year_txns) * 100.0
+                else:
+                    mtd_yoy_change = 0.0
             
             return jsonify({
                 'total_transactions': kpis['total_transactions'] or 0,
+                'mtd_transactions': mtd_txns,
+                'mtd_yoy_change': mtd_yoy_change,
                 'avg_price_sqm': avg_price_sqm_row['avg_price_sqm'] or 0.0,
                 'total_volume': kpis['total_volume'] or 0.0,
                 'avg_area': kpis['avg_area'] or 0.0

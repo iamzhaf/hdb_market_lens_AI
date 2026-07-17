@@ -20,6 +20,8 @@ export default function App() {
   // Dashboard states
   const [kpis, setKpis] = useState({
     total_transactions: 0,
+    mtd_transactions: 0,
+    mtd_yoy_change: 0,
     avg_price_sqm: 0,
     total_volume: 0,
     avg_area: 0
