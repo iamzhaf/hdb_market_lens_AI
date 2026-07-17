@@ -26,7 +26,8 @@ export default function App() {
     trend: [],
     towns: [],
     flat_types: [],
-    flat_models: []
+    flat_models: [],
+    flat_types_by_year: []
   });
 
   // Chat states

@@ -22,6 +22,7 @@ export default function DashboardCharts({ chartData, theme }) {
   const towns = chartData.towns || [];
   const flatTypes = chartData.flat_types || [];
   const flatModels = chartData.flat_models || [];
+  const flatTypesByYear = chartData.flat_types_by_year || [];
 
   // Color Palette
   const colors = ['#0047AB', '#1e60c4', '#3b82f6', '#0077b6', '#10b981', '#f59e0b', '#ec4899', '#f43f5e'];
@@ -188,51 +189,56 @@ export default function DashboardCharts({ chartData, theme }) {
     ]
   };
 
-  // Option 4: Flat Model Bar Chart
-  const flatModelsOption = {
+  // Option 4: Popular Flat Type by transactions across years (stacked bar)
+  const yearsList = [...new Set(flatTypesByYear.map(d => d.year))].sort((a, b) => a - b);
+  const flatTypesList = [...new Set(flatTypesByYear.map(d => d.flat_type))];
+
+  const flatTypesAcrossYearsOption = {
     backgroundColor: 'transparent',
+    color: colors,
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' }
     },
+    legend: {
+      data: flatTypesList,
+      textStyle: { color: textColor, fontFamily: 'Outfit', fontSize: 10 },
+      top: '0%',
+      type: 'scroll'
+    },
     grid: {
       left: '3%',
-      right: '5%',
+      right: '4%',
       bottom: '3%',
+      top: '15%',
       containLabel: true
     },
     xAxis: {
-      type: 'value',
-      axisLabel: {
-        color: textColor,
-        fontFamily: 'Outfit'
-      },
-      splitLine: { lineStyle: { color: gridColor } }
-    },
-    yAxis: {
       type: 'category',
-      data: flatModels.map(d => d.label).reverse(),
-      axisLabel: { color: textColor, fontFamily: 'Outfit', interval: 0 },
+      data: yearsList,
+      axisLabel: { color: textColor, fontFamily: 'Outfit' },
       axisLine: { lineStyle: { color: gridColor } }
     },
-    series: [
-      {
-        name: 'Number of Flats',
+    yAxis: {
+      type: 'value',
+      name: 'Transactions',
+      nameTextStyle: { color: textColor, fontFamily: 'Outfit' },
+      axisLabel: { color: textColor, fontFamily: 'Outfit' },
+      splitLine: { lineStyle: { color: gridColor } }
+    },
+    series: flatTypesList.map(type => {
+      const data = yearsList.map(year => {
+        const item = flatTypesByYear.find(d => d.year === year && d.flat_type === type);
+        return item ? item.txn_count : 0;
+      });
+      return {
+        name: type,
         type: 'bar',
-        data: flatModels.map(d => d.value).reverse(),
-        itemStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 1, y2: 0,
-            colorStops: [
-              { offset: 0, color: '#3b82f6' },
-              { offset: 1, color: '#0047AB' }
-            ]
-          },
-          borderRadius: [0, 4, 4, 0]
-        }
-      }
-    ]
+        stack: 'total',
+        emphasis: { focus: 'series' },
+        data: data
+      };
+    })
   };
 
   // Option 5: Growth rate of average price
@@ -506,11 +512,11 @@ export default function DashboardCharts({ chartData, theme }) {
           <CardHeader className="border-b border-border pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <Layers size={18} className="text-muted-foreground" />
-              <span>Popular Flat Models</span>
+              <span>Popular Flat Types over Years</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[350px] w-full pt-4">
-            <ReactECharts option={flatModelsOption} style={{ height: '100%', width: '100%' }} />
+            <ReactECharts option={flatTypesAcrossYearsOption} style={{ height: '100%', width: '100%' }} />
           </CardContent>
         </Card>
       </div>
