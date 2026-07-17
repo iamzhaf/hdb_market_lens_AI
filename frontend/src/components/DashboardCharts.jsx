@@ -27,6 +27,18 @@ export default function DashboardCharts({ chartData, theme }) {
   // Color Palette
   const colors = ['#0047AB', '#1e60c4', '#3b82f6', '#0077b6', '#10b981', '#f59e0b', '#ec4899', '#f43f5e'];
 
+  // Consistent color mapping for flat types
+  const flatTypeColors = {
+    '4 ROOM': '#0047AB',
+    '3 ROOM': '#1e60c4',
+    '5 ROOM': '#3b82f6',
+    'EXECUTIVE': '#0077b6',
+    '2 ROOM': '#10b981',
+    '1 ROOM': '#f59e0b',
+    'MULTI-GENERATION': '#ec4899',
+    'MULTI GENERATION': '#ec4899'
+  };
+
   // Option 1: Price and Transaction Trend
   const trendOption = {
     backgroundColor: 'transparent',
@@ -177,7 +189,10 @@ export default function DashboardCharts({ chartData, theme }) {
         labelLine: { show: false },
         data: flatTypes.map(d => ({
           name: d.label,
-          value: d.value
+          value: d.value,
+          itemStyle: {
+            color: flatTypeColors[d.label] || '#9ca3af'
+          }
         }))
       }
     ]
@@ -229,6 +244,9 @@ export default function DashboardCharts({ chartData, theme }) {
         name: type,
         type: 'bar',
         stack: 'total',
+        itemStyle: {
+          color: flatTypeColors[type] || '#9ca3af'
+        },
         emphasis: { focus: 'series' },
         data: data
       };
