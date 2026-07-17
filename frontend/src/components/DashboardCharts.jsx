@@ -495,8 +495,8 @@ export default function DashboardCharts({ chartData, theme }) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-card/60 border-border backdrop-blur-md">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-card/60 border-border backdrop-blur-md md:col-span-1">
           <CardHeader className="border-b border-border pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <PieIcon size={18} className="text-muted-foreground" />
@@ -508,7 +508,7 @@ export default function DashboardCharts({ chartData, theme }) {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 border-border backdrop-blur-md">
+        <Card className="bg-card/60 border-border backdrop-blur-md md:col-span-2">
           <CardHeader className="border-b border-border pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <Layers size={18} className="text-muted-foreground" />
