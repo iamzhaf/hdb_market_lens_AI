@@ -31,9 +31,9 @@ export default function DashboardCharts({ chartData, theme }) {
   const flatTypeColors = {
     '4 ROOM': '#0047AB',
     '3 ROOM': '#1e60c4',
-    '5 ROOM': '#3b82f6',
-    'EXECUTIVE': '#0077b6',
-    '2 ROOM': '#10b981',
+    '2 ROOM': '#3b82f6',
+    'EXECUTIVE': '#2ccfecff',
+    '5 ROOM': '#10b981',
     '1 ROOM': '#f59e0b',
     'MULTI-GENERATION': '#ec4899',
     'MULTI GENERATION': '#ec4899'
@@ -161,7 +161,7 @@ export default function DashboardCharts({ chartData, theme }) {
   // Option 3: Flat Type Pie
   const flatTypesOption = {
     backgroundColor: 'transparent',
-    color: colors,
+    color: flatTypes.map(d => flatTypeColors[d.label] || '#9ca3af'),
     tooltip: {
       trigger: 'item',
       formatter: '{b}: {c} flats ({d}%)'
@@ -177,8 +177,8 @@ export default function DashboardCharts({ chartData, theme }) {
       {
         name: 'Flat Types',
         type: 'pie',
-        radius: ['35%', '58%'],
-        center: ['50%', '40%'],
+        radius: ['40%', '80%'],
+        center: ['50%', '45%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 8,
@@ -189,10 +189,7 @@ export default function DashboardCharts({ chartData, theme }) {
         labelLine: { show: false },
         data: flatTypes.map(d => ({
           name: d.label,
-          value: d.value,
-          itemStyle: {
-            color: flatTypeColors[d.label] || '#9ca3af'
-          }
+          value: d.value
         }))
       }
     ]
@@ -204,7 +201,7 @@ export default function DashboardCharts({ chartData, theme }) {
 
   const flatTypesAcrossYearsOption = {
     backgroundColor: 'transparent',
-    color: colors,
+    color: flatTypesList.map(type => flatTypeColors[type] || '#9ca3af'),
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' }
@@ -244,9 +241,6 @@ export default function DashboardCharts({ chartData, theme }) {
         name: type,
         type: 'bar',
         stack: 'total',
-        itemStyle: {
-          color: flatTypeColors[type] || '#9ca3af'
-        },
         emphasis: { focus: 'series' },
         data: data
       };
