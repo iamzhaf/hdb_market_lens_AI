@@ -85,23 +85,24 @@ def get_kpis():
             cur.execute(overall_query, params)
             kpis = cur.fetchone()
             
-            # 2. Fetch last 6 months average resale price
-            avg_price_query = """
+            # 2. Fetch last 6 months average price per sqm
+            avg_price_sqm_query = """
                 SELECT 
-                    ROUND(AVG(resale_price))::double precision as avg_price
+                    ROUND(AVG(resale_price / floor_area_sqm))::double precision as avg_price_sqm
                 FROM hdb.hdb_resale_prices
                 WHERE month >= (SELECT MAX(month) FROM hdb.hdb_resale_prices) - INTERVAL '5 months'
+                  AND floor_area_sqm > 0
             """
             avg_params = []
             if town:
-                avg_price_query += " AND town = %s"
+                avg_price_sqm_query += " AND town = %s"
                 avg_params.append(town)
-            cur.execute(avg_price_query, avg_params)
-            avg_price_row = cur.fetchone()
+            cur.execute(avg_price_sqm_query, avg_params)
+            avg_price_sqm_row = cur.fetchone()
             
             return jsonify({
                 'total_transactions': kpis['total_transactions'] or 0,
-                'avg_price': avg_price_row['avg_price'] or 0.0,
+                'avg_price_sqm': avg_price_sqm_row['avg_price_sqm'] or 0.0,
                 'total_volume': kpis['total_volume'] or 0.0,
                 'avg_area': kpis['avg_area'] or 0.0
             })

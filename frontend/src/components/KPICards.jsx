@@ -30,9 +30,9 @@ export default function KPICards({ kpis }) {
       accent: 'accent-indigo'
     },
     {
-      title: 'Average Resale Price',
-      value: formatSGD(kpis.avg_price),
-      meta: 'Per unit average',
+      title: 'Avg Price Per Sqm',
+      value: `${formatSGD(kpis.avg_price_sqm)}/sqm`,
+      meta: 'Last 6 months',
       trend: '+1.8% MoM',
       icon: TrendingUp,
       accent: 'accent-blue'
