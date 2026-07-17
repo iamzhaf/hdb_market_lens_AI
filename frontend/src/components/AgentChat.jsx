@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Cpu, Send, Sparkles, Terminal, Trash2, BarChart2, Table as TableIcon, Code } from 'lucide-react';
+import { Cpu, Send, Sparkles, Terminal, Trash2, BarChart2, Table as TableIcon, Code, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { API_URL } from '../config';
 
 // Sub-component to manage tab state for each tool execution trace individually
 function ToolExecutionTrace({ call, resp, theme }) {
@@ -59,7 +60,7 @@ function ToolExecutionTrace({ call, resp, theme }) {
     if (!isChartable) return null;
     const textColor = isDark ? '#9ca3af' : '#475569';
     const gridColor = isDark ? 'rgba(75, 85, 99, 0.2)' : 'rgba(148, 163, 184, 0.2)';
-    const colors = ['#6366f1', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];
+    const colors = ['#0047AB', '#1e60c4', '#3b82f6', '#0077b6', '#10b981'];
 
     const isTime = labelKey.toLowerCase().includes('month') ||
                    labelKey.toLowerCase().includes('year') ||
@@ -117,7 +118,7 @@ function ToolExecutionTrace({ call, resp, theme }) {
     <div className="mt-3 bg-secondary/20 border border-border rounded-lg p-3 flex flex-col gap-2">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex justify-between items-center border-b border-border pb-2 mb-2">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-500">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
             <Terminal size={14} />
             <span>Query Execution Trace</span>
           </div>
@@ -199,7 +200,7 @@ export default function AgentChat({ messages, onSendMessage, onClearChat, loadin
     "What is the average resale price in Tampines for 4-Room flats in 2025?",
     "Show the average resale price by flat type in Bedok.",
     "Which town has the highest average floor area size?",
-    "Generate a slide deck report comparing Tampines and Pasir Ris markets."
+    "Generate a slide deck report comparing Tampines and Bedok markets."
   ];
 
   useEffect(() => {
@@ -211,6 +212,26 @@ export default function AgentChat({ messages, onSendMessage, onClearChat, loadin
     if (!input.trim() || loading) return;
     onSendMessage(input.trim());
     setInput('');
+  };
+
+  const handleDownload = async (filename) => {
+    try {
+      const url = `${API_URL}/api/reports/${filename}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to download report');
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Error downloading report. Please try again.');
+    }
   };
 
   const groupToolSteps = (steps) => {
@@ -281,10 +302,10 @@ export default function AgentChat({ messages, onSendMessage, onClearChat, loadin
           }
 
           if (para.trim().startsWith('### ')) {
-            return <h4 key={paraIdx} className="text-sm font-semibold mt-4 mb-2 text-indigo-500">{para.replace('### ', '')}</h4>;
+            return <h4 key={paraIdx} className="text-sm font-semibold mt-4 mb-2 text-primary">{para.replace('### ', '')}</h4>;
           }
           if (para.trim().startsWith('## ')) {
-            return <h3 key={paraIdx} className="text-base font-bold mt-5 mb-2 text-indigo-500">{para.replace('## ', '')}</h3>;
+            return <h3 key={paraIdx} className="text-base font-bold mt-5 mb-2 text-primary">{para.replace('## ', '')}</h3>;
           }
 
           return <p key={paraIdx} className="mb-2 text-sm leading-relaxed">{inlineRender}</p>;
@@ -294,10 +315,10 @@ export default function AgentChat({ messages, onSendMessage, onClearChat, loadin
   };
 
   return (
-    <Card className="flex-1 flex flex-col bg-card/60 border-border backdrop-blur-md overflow-hidden rounded-xl shadow-lg h-[calc(100vh-170px)]">
-      <CardHeader className="border-b border-border py-4 px-6 flex flex-row items-center justify-between space-y-0">
+    <Card className="flex-1 flex flex-col bg-card/60 border-border backdrop-blur-md overflow-hidden rounded-xl shadow-lg h-[calc(100vh-140px)] md:h-[calc(100vh-170px)]">
+      <CardHeader className="border-b border-border py-3 md:py-4 px-4 md:px-6 flex flex-row items-center justify-between space-y-0 text-left">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-primary flex items-center justify-center text-white shadow-md">
             <Sparkles size={16} />
           </div>
           <div>
@@ -305,115 +326,178 @@ export default function AgentChat({ messages, onSendMessage, onClearChat, loadin
             <div className="text-xs text-muted-foreground mt-0.5">Powered by HDB_Insights_Agent</div>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="h-8 gap-2 bg-secondary/30 hover:bg-secondary border-border" onClick={onClearChat}>
+        <Button variant="outline" size="sm" className="h-8 gap-2 bg-secondary/30 hover:bg-secondary border-border cursor-pointer" onClick={onClearChat}>
           <Trash2 size={14} className="text-muted-foreground" />
           <span>Clear Chat</span>
         </Button>
       </CardHeader>
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-6">
         {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
-            <Cpu size={40} className="text-indigo-500 mb-4 opacity-80" />
-            <h3 className="text-base font-bold text-foreground mb-1">Ask the Market Analytics Agent</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mb-6 leading-relaxed">
-              Ask questions in plain English. The agent will formulate PostgreSQL queries, extract insights, and format tables or request PowerPoint reports.
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-4 max-w-2xl mx-auto w-full">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-primary to-blue-400 bg-clip-text text-transparent mb-3">
+              Hello! I'm HDB Market Lens AI
+            </h1>
+            <p className="text-muted-foreground text-sm md:text-base max-w-md mb-8">
+              I can help you analyze resale trends, run SQL queries, or compile PowerPoint reports.
             </p>
-            <div className="flex flex-col gap-2 w-full max-w-lg text-left">
-              <div className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">Suggested Queries</div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full text-left">
               {samplePrompts.map((prompt, idx) => (
-                <Button
+                <button
                   key={idx}
-                  variant="outline"
-                  className="w-full justify-start text-left font-medium px-4 py-3 bg-secondary/20 hover:bg-secondary/40 hover:border-indigo-500/50 border-border h-auto text-sm transition-all"
                   onClick={() => onSendMessage(prompt)}
+                  className="p-4 rounded-2xl bg-secondary/20 hover:bg-secondary/40 border border-border/40 hover:border-primary/40 hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col justify-between min-h-[100px] outline-none"
                 >
-                  {prompt}
-                </Button>
+                  <span className="text-sm font-semibold text-foreground/90 group-hover:text-primary transition-colors leading-relaxed">
+                    {prompt}
+                  </span>
+                  <span className="self-end text-xs text-muted-foreground bg-secondary/50 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Send size={12} className="text-primary" />
+                  </span>
+                </button>
               ))}
             </div>
           </div>
         ) : (
-          messages.map((msg, i) => (
-            <div key={i} className={`flex flex-col max-w-[85%] gap-1.5 ${msg.author === 'user' ? 'self-end' : 'self-start'}`}>
-              <div className={`p-4 rounded-xl text-sm leading-relaxed ${
-                msg.author === 'user'
-                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-none shadow-md'
-                  : 'bg-secondary/30 border border-border text-foreground rounded-bl-none'
-              }`}>
-                {renderMessageContent(msg.text)}
-
-                {/* Steps and dynamic tool execution trace charts */}
-                {msg.steps && msg.steps.length > 0 && (
-                  <div className="mt-3 bg-secondary/10 border border-dashed border-indigo-500/30 rounded-lg p-3 flex flex-col gap-2">
-                    <div className="flex items-center gap-1.5 font-semibold text-indigo-400 border-b border-border pb-1.5 mb-1 text-xs">
-                      <Terminal size={14} />
-                      <span>SQL Tool Execution Trace</span>
+          <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
+            {messages.map((msg, i) => {
+              const isUser = msg.author === 'user';
+              if (isUser) {
+                return (
+                  <div key={i} className="flex flex-col max-w-[85%] self-end gap-1 text-left">
+                    <div className="px-5 py-3 rounded-2xl text-sm bg-secondary/80 border border-border/40 text-foreground shadow-sm">
+                      {renderMessageContent(msg.text)}
                     </div>
-                    {groupToolSteps(msg.steps).map((group, idx) => {
-                      if (group.type === 'query') {
-                        return (
-                          <ToolExecutionTrace
-                            key={idx}
-                            call={group.call}
-                            resp={group.response}
-                            theme={theme}
-                          />
-                        );
-                      }
-                      if (group.type === 'report') {
-                        return (
-                          <div key={idx} className="text-xs text-purple-400 mt-2 font-medium pl-1">
-                            Generating Slide Deck Report: {group.call.args.filename}
-                          </div>
-                        );
-                      }
-                      if (group.type === 'other') {
-                        return (
-                          <div key={idx} className="text-[10px] text-muted-foreground mt-1 pl-1">
-                            Execution Step: {group.raw.name || 'API Call'}
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
+                    <div className="text-[10px] text-muted-foreground px-1 self-end">
+                      {msg.time}
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className={`flex gap-2 text-[10px] text-muted-foreground px-1 ${msg.author === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <span>{msg.author === 'user' ? 'You' : 'HDB Agent'}</span>
-                <span>•</span>
-                <span>{msg.time}</span>
-              </div>
-            </div>
-          ))
-        )}
+                );
+              }
 
-        {loading && (
-          <div className="flex flex-col max-w-[85%] gap-1.5 self-start">
-            <div className="p-4 rounded-xl text-sm bg-secondary/30 border border-border text-foreground rounded-bl-none flex items-center gap-3">
-              <div className="spinner border-t-indigo-500"></div>
-              <span className="text-sm text-muted-foreground">Agent is analyzing database insights...</span>
-            </div>
+              // Assistant message layout (Gemini avatar + text style)
+              return (
+                <div key={i} className="flex gap-4 items-start w-full mt-2 text-left">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-primary flex items-center justify-center text-white shrink-0 shadow-md">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="flex-1 flex flex-col gap-1 min-w-0">
+                    <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <span>HDB Analyst Agent</span>
+                      <span>•</span>
+                      <span className="font-normal text-[10px]">{msg.time}</span>
+                    </div>
+                    
+                    <div className="text-sm leading-relaxed text-foreground/90 pr-2">
+                      {renderMessageContent(msg.text)}
+                    </div>
+
+                    {/* Steps and dynamic tool execution trace charts */}
+                    {msg.steps && msg.steps.length > 0 && (
+                      <div className="mt-3 bg-secondary/10 border border-dashed border-primary/20 rounded-lg p-3 flex flex-col gap-2 max-w-full overflow-hidden">
+                        <div className="flex items-center gap-1.5 font-semibold text-primary border-b border-border pb-1.5 mb-1 text-xs">
+                          <Terminal size={14} />
+                          <span>SQL Tool Execution Trace</span>
+                        </div>
+                        {groupToolSteps(msg.steps).map((group, idx) => {
+                          if (group.type === 'query') {
+                            return (
+                              <ToolExecutionTrace
+                                key={idx}
+                                call={group.call}
+                                resp={group.response}
+                                theme={theme}
+                              />
+                            );
+                          }
+                          if (group.type === 'report') {
+                            const filename = group.call.args.filename || 'business_insights_report.pptx';
+                            const downloadUrl = `${API_URL}/api/reports/${filename}`;
+                            return (
+                              <div key={idx} className="mt-2 pl-1 flex flex-col gap-2">
+                                <div className="text-xs text-primary font-semibold flex items-center gap-1.5">
+                                  <span>Generated Slide Deck:</span>
+                                  <span className="font-mono text-muted-foreground text-[11px] truncate max-w-xs">{filename}</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleDownload(filename)}
+                                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-2 self-start h-8 px-3 text-xs shadow-sm cursor-pointer"
+                                >
+                                  <Download size={13} />
+                                  <span>Download Report</span>
+                                </Button>
+                              </div>
+                            );
+                          }
+                          if (group.type === 'other') {
+                            return (
+                              <div key={idx} className="text-[10px] text-muted-foreground mt-1 pl-1">
+                                Execution Step: {group.raw.name || 'API Call'}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {loading && (
+              <div className="flex gap-4 items-start w-full mt-2 text-left">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-primary flex items-center justify-center text-white shrink-0 shadow-md">
+                  <Sparkles size={16} />
+                </div>
+                <div className="flex-1 flex flex-col gap-2 min-w-0">
+                  <div className="text-xs font-semibold text-muted-foreground">HDB Analyst Agent</div>
+                  <div className="flex items-center gap-3 bg-secondary/20 border border-border/40 p-4 rounded-xl max-w-sm">
+                    <div className="spinner border-t-primary animate-spin"></div>
+                    <span className="text-xs text-muted-foreground">Agent is analyzing database insights...</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="p-4 px-6 border-t border-border bg-secondary/10 flex gap-3" onSubmit={handleSubmit}>
-        <Input
-          type="text"
-          className="flex-1 bg-secondary/30 border-border text-foreground focus-visible:ring-1 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 rounded-lg h-11"
-          placeholder="Ask a question about HDB prices (e.g. 'Compare resale price of Bukit Merah vs Queenstown')..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-        />
-        <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 hover:shadow-lg transition-all font-semibold gap-2 h-11 px-5" disabled={loading || !input.trim()}>
-          <Send size={14} />
-          <span>Send</span>
-        </Button>
-      </form>
+      <div className="p-4 border-t border-border bg-background/30 backdrop-blur-md flex justify-center">
+        <form onSubmit={handleSubmit} className="relative flex items-center max-w-3xl w-full">
+          <Input
+            type="text"
+            className="w-full bg-secondary/40 border-border text-sm h-12 pr-24 pl-5 rounded-full focus-visible:ring-1 focus-visible:ring-primary shadow-sm"
+            placeholder="Ask about HDB prices, resale trends, or generate a slide deck..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
+          />
+          <div className="absolute right-2.5 flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-full cursor-pointer"
+              onClick={onClearChat}
+              title="Clear chat history"
+            >
+              <Trash2 size={14} />
+            </Button>
+            <Button
+              type="submit"
+              size="icon"
+              className="h-8 w-8 bg-primary hover:bg-primary/95 text-white rounded-full cursor-pointer shadow-sm"
+              disabled={loading || !input.trim()}
+            >
+              <Send size={14} />
+            </Button>
+          </div>
+        </form>
+      </div>
     </Card>
   );
 }

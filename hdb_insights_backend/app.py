@@ -136,6 +136,18 @@ def get_chart_data():
             """)
             chart_data['flat_models'] = [dict(row) for row in cur.fetchall()]
 
+            # 5. Flat Type transactions across years
+            cur.execute("""
+                SELECT 
+                    EXTRACT(YEAR FROM month)::integer as year,
+                    flat_type,
+                    COUNT(*)::integer as txn_count
+                FROM hdb.hdb_resale_prices
+                GROUP BY year, flat_type
+                ORDER BY year ASC, flat_type ASC;
+            """)
+            chart_data['flat_types_by_year'] = [dict(row) for row in cur.fetchall()]
+
             return jsonify(chart_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

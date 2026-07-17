@@ -116,7 +116,7 @@ export default function ReportGenerator() {
   };
 
   return (
-    <Card className="flex-1 flex flex-col bg-card/60 border-border backdrop-blur-md overflow-hidden rounded-xl shadow-lg p-5 min-h-[calc(100vh-170px)]">
+    <Card className="flex-1 flex flex-col bg-card/60 border-border backdrop-blur-md md:overflow-hidden rounded-xl shadow-lg p-4 md:p-5 min-h-0 md:h-[calc(100vh-170px)]">
       <CardHeader className="border-b border-border pb-3 mb-4 p-0">
         <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
           <FileText size={16} className="text-muted-foreground" />
@@ -124,9 +124,9 @@ export default function ReportGenerator() {
         </CardTitle>
       </CardHeader>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 overflow-hidden pb-4">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 md:overflow-hidden pb-4">
         {/* Left Panel: Slide List & Form Editor */}
-        <div className="flex flex-col gap-5 overflow-y-auto pr-2">
+        <div className="flex flex-col gap-5 md:overflow-y-auto pr-2">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase text-muted-foreground">Report Filename</label>
             <Input
@@ -159,7 +159,7 @@ export default function ReportGenerator() {
                   key={i}
                   className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm transition-all border cursor-pointer select-none ${
                     isActive
-                      ? 'text-white bg-gradient-to-r from-indigo-500 to-purple-600 border-transparent shadow-[0_4px_12px_rgba(99,102,241,0.2)]'
+                      ? 'text-white bg-gradient-to-r from-blue-600 to-primary border-transparent shadow-[0_4px_12px_rgba(0,71,171,0.2)]'
                       : 'text-muted-foreground bg-secondary/15 hover:bg-secondary/30 border-border/40 hover:text-foreground'
                   }`}
                   onClick={() => handleSelectSlide(i)}
@@ -270,7 +270,7 @@ export default function ReportGenerator() {
 
           <div className="flex gap-3 mt-4">
             <Button
-              className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 hover:shadow-lg transition-all font-semibold gap-2 h-10 cursor-pointer"
+              className="flex-1 bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm hover:shadow transition-all font-semibold gap-2 h-10 cursor-pointer"
               onClick={handleGenerate}
               disabled={loading}
             >
@@ -294,12 +294,12 @@ export default function ReportGenerator() {
         {/* Right Panel: Widescreen Slide Preview Mockup */}
         <div className="flex flex-col gap-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slide Preview (16:9 Mockup)</span>
-          <div className="flex-1 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-250px)] pr-1">
+          <div className="flex-1 flex flex-col gap-4 md:overflow-y-auto lg:max-h-[calc(100vh-250px)] pr-1">
             {slides[activeSlide] && (
               <div className={`w-full aspect-[16/9] relative flex flex-col justify-start p-6 rounded-xl border border-border/80 shadow-2xl overflow-hidden ${
                 slides[activeSlide].type === 'title'
-                  ? 'justify-center items-center text-center bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] text-white'
-                  : 'bg-[#0f172a] text-white border-l-4 border-l-indigo-500'
+                  ? 'justify-center items-center text-center bg-gradient-to-br from-[#002255] to-[#0f172a] text-white'
+                  : 'bg-[#0f172a] text-white border-l-4 border-l-[#0047AB]'
               }`}>
                 <div className="absolute top-3 right-3 text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-white/10 text-slate-300">
                   {slides[activeSlide].type === 'title' ? 'Title Slide' : 'Content Slide'}
@@ -312,12 +312,12 @@ export default function ReportGenerator() {
                 </h2>
                 
                 {slides[activeSlide].type === 'title' ? (
-                  <p className="text-xs md:text-sm text-indigo-200/90 max-w-md leading-relaxed">{slides[activeSlide].subtitle || ''}</p>
+                  <p className="text-xs md:text-sm text-blue-200/90 max-w-md leading-relaxed">{slides[activeSlide].subtitle || ''}</p>
                 ) : (
                   <div className="flex flex-col gap-2 text-xs md:text-sm text-slate-300/90 leading-relaxed font-sans text-left">
                     {slides[activeSlide].bullets?.map((bullet, idx) => (
                       <div key={idx} className="flex gap-2 items-start">
-                        <span className="text-indigo-400 font-bold">•</span>
+                        <span className="text-blue-400 font-bold">•</span>
                         <span>{bullet}</span>
                       </div>
                     ))}

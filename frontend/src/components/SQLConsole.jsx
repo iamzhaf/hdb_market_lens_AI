@@ -52,8 +52,8 @@ export default function SQLConsole() {
   };
 
   return (
-    <div className="flex flex-col gap-6 h-[calc(100vh-170px)] overflow-hidden">
-      <Card className="bg-card/60 border-border backdrop-blur-md flex flex-col gap-4 p-5 shrink-0">
+    <div className="flex flex-col gap-6 h-auto md:h-[calc(100vh-170px)] md:overflow-hidden">
+      <Card className="bg-card/60 border-border backdrop-blur-md flex flex-col gap-4 p-4 md:p-5 shrink-0">
         <CardTitle className="text-sm font-bold flex items-center gap-2 border-b border-border pb-2 text-foreground">
           <Database size={16} className="text-muted-foreground" />
           <span>PostgreSQL Query Sandbox</span>
@@ -74,18 +74,18 @@ export default function SQLConsole() {
         </div>
 
         <textarea
-          className="w-full h-32 font-mono bg-[#070a13] text-blue-400 border border-border/60 rounded-lg p-4 text-xs outline-none focus:border-indigo-500 transition-colors resize-none"
+          className="w-full h-32 font-mono bg-[#070a13] text-blue-400 border border-border/60 rounded-lg p-4 text-xs outline-none focus:border-primary transition-colors resize-none"
           value={sql}
           onChange={(e) => setSql(e.target.value)}
           placeholder="Enter a SELECT SQL query here..."
         />
 
-        <div className="flex justify-between items-center mt-1">
-          <span className="text-[11px] text-muted-foreground max-w-[70%]">
+        <div className="flex justify-between items-center mt-1 flex-wrap gap-2">
+          <span className="text-[11px] text-muted-foreground max-w-full sm:max-w-[70%]">
             Note: Only SELECT queries against hdb.hdb_resale_prices are allowed.
           </span>
           <Button
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 hover:shadow-lg transition-all font-semibold gap-2 h-9 px-4 cursor-pointer"
+            className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm hover:shadow transition-all font-semibold gap-2 h-9 px-4 cursor-pointer ml-auto"
             onClick={handleRun}
             disabled={loading}
           >
@@ -95,7 +95,7 @@ export default function SQLConsole() {
         </div>
       </Card>
 
-      <Card className="bg-card/60 border-border backdrop-blur-md flex-1 flex flex-col overflow-hidden p-5">
+      <Card className="bg-card/60 border-border backdrop-blur-md flex-1 flex flex-col md:overflow-hidden p-4 md:p-5 min-h-[300px] md:min-h-0">
         <div className="flex justify-between items-center border-b border-border pb-3 mb-4">
           <span className="text-sm font-bold text-foreground">Query Output</span>
           {results && (
@@ -106,7 +106,7 @@ export default function SQLConsole() {
           )}
         </div>
 
-        <div className="flex-1 overflow-auto flex flex-col justify-center items-center">
+        <div className="flex-1 md:overflow-auto w-full flex flex-col justify-center items-center">
           {error && (
             <div className="w-full max-w-2xl flex gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm self-start my-4">
               <AlertCircle size={18} className="shrink-0 mt-0.5" />

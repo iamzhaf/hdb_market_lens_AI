@@ -59,17 +59,10 @@ export default function KPICards({ kpis }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {cards.map((card, i) => {
         const Icon = card.icon;
-        const accentBorder = {
-          'accent-indigo': 'before:bg-gradient-to-r before:from-indigo-500 before:to-purple-600',
-          'accent-blue': 'before:bg-blue-500',
-          'accent-purple': 'before:bg-purple-500',
-          'accent-green': 'before:bg-emerald-500'
-        }[card.accent];
-
         return (
           <Card
             key={i}
-            className={`relative overflow-hidden bg-card/60 border-border backdrop-blur-md hover:border-indigo-500/50 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300 before:absolute before:top-0 before:left-0 before:w-full before:h-[3px] ${accentBorder}`}
+            className="relative overflow-hidden bg-card/60 border-border backdrop-blur-md hover:border-primary/50 hover:shadow-[0_8px_30px_rgba(0,71,171,0.08)] transition-all duration-300"
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

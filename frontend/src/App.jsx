@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, MessageSquare, Terminal, FileText, Sun, Moon, Cpu, Database } from 'lucide-react';
+import { Home, MessageSquare, Terminal, FileText, Sun, Moon, Cpu, Database, Menu, X } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import KPICards from './components/KPICards';
@@ -11,8 +11,9 @@ import { API_URL } from './config';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [dbStatus, setDbStatus] = useState('connecting');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Dashboard states
   const [kpis, setKpis] = useState({
@@ -126,16 +127,36 @@ export default function App() {
   ];
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans relative">
+      {/* Sidebar backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar navigation */}
-      <aside className="w-64 bg-card border-r border-border backdrop-blur-md flex flex-col p-6 gap-8 select-none z-20">
-        <div className="flex items-center gap-3 px-2">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-[0_0_16px_rgba(99,102,241,0.4)]">
-            <Cpu size={18} />
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-border backdrop-blur-md flex flex-col p-6 gap-8 select-none z-30 transition-transform duration-300 md:relative md:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-r from-blue-600 to-primary w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-[0_0_16px_rgba(0,71,171,0.4)]">
+              <Cpu size={18} />
+            </div>
+            <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-500 to-primary bg-clip-text text-transparent">
+              HDB Analytics
+            </span>
           </div>
-          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            HDB Analytics
-          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={18} />
+          </Button>
         </div>
         
         <nav className="flex flex-col gap-2">
@@ -147,10 +168,13 @@ export default function App() {
                 key={item.id}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all text-left outline-none cursor-pointer ${
                   isActive
-                    ? 'text-white bg-gradient-to-r from-indigo-500 to-purple-600 shadow-[0_4px_14px_rgba(99,102,241,0.25)] font-semibold border border-transparent'
+                    ? 'text-white bg-gradient-to-r from-blue-600 to-primary shadow-[0_4px_14px_rgba(0,71,171,0.25)] font-semibold border border-transparent'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent hover:border-border font-medium'
                 }`}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setSidebarOpen(false);
+                }}
               >
                 <Icon size={16} className={isActive ? 'text-white' : 'text-muted-foreground'} />
                 <span>{item.label}</span>
@@ -175,18 +199,28 @@ export default function App() {
       </aside>
 
       {/* Main Panel content workspace */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-[70px] bg-card border-b border-border backdrop-blur-md flex items-center justify-between px-8 z-10">
-          <h1 className="text-lg font-bold tracking-tight">
-            {activeTab === 'dashboard' && 'Market Analytics Dashboard'}
-            {activeTab === 'chat' && 'HDB Insights AI Agent'}
-            {activeTab === 'sql' && 'PostgreSQL Developer Console'}
-            {activeTab === 'report' && 'Executive Slides Builder'}
-          </h1>
+      <main className="flex-1 flex flex-col overflow-hidden w-full">
+        <header className="h-[70px] bg-card border-b border-border backdrop-blur-md flex items-center justify-between px-4 md:px-8 z-10 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden text-foreground h-9 w-9 shrink-0"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={20} />
+            </Button>
+            <h1 className="text-sm md:text-lg font-bold tracking-tight truncate">
+              {activeTab === 'dashboard' && 'Market Analytics Dashboard'}
+              {activeTab === 'chat' && 'HDB Insights AI Agent'}
+              {activeTab === 'sql' && 'PostgreSQL Developer Console'}
+              {activeTab === 'report' && 'Executive Slides Builder'}
+            </h1>
+          </div>
           
           <Badge
             variant="outline"
-            className={`flex items-center gap-2 px-3 py-1 text-xs border rounded-full capitalize ${
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] md:text-xs border rounded-full capitalize shrink-0 ${
               dbStatus === 'connected'
                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                 : dbStatus === 'connecting'
@@ -197,11 +231,11 @@ export default function App() {
             <div className={`w-1.5 h-1.5 rounded-full ${
               dbStatus === 'connected' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : dbStatus === 'connecting' ? 'bg-amber-500' : 'bg-destructive'
             }`} />
-            <span>Postgres {dbStatus}</span>
+            <span className="hidden sm:inline">Postgres</span> {dbStatus}
           </Badge>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6 md:gap-8">
           {activeTab === 'dashboard' && (
             <>
               <KPICards kpis={kpis} />

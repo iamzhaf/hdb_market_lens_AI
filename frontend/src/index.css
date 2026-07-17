@@ -49,7 +49,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
     
-    --primary: 243 75% 59%;
+    --primary: 215 100% 34%;
     --primary-foreground: 210 40% 98%;
     
     --secondary: 210 40% 96.1%;
@@ -66,7 +66,7 @@
     
     --border: 214.3 31.8% 91.4% / 25%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 243 75% 59%;
+    --ring: 215 100% 34%;
     
     --radius: 0.75rem;
 
@@ -76,18 +76,18 @@
     --bg-tertiary: rgba(241, 245, 249, 0.9);
     
     --border-color: rgba(148, 163, 184, 0.25);
-    --border-glow: rgba(99, 102, 241, 0.1);
+    --border-glow: rgba(0, 71, 171, 0.1);
     
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #94a3b8;
     
-    --accent-blue: #2563eb;
-    --accent-indigo: #4f46e5;
-    --accent-purple: #7c3aed;
+    --accent-blue: #0047AB;
+    --accent-indigo: #0047AB;
+    --accent-purple: #1e60c4;
     
-    --gradient-accent: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-    --gradient-glow: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent 40%);
+    --gradient-accent: linear-gradient(135deg, #0047AB 0%, #1e60c4 100%);
+    --gradient-glow: radial-gradient(circle at top right, rgba(0, 71, 171, 0.05), transparent 40%);
     
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -103,7 +103,7 @@
     --popover: 222 47% 7%;
     --popover-foreground: 210 40% 98%;
     
-    --primary: 239 84% 67%;
+    --primary: 215 100% 50%;
     --primary-foreground: 210 40% 98%;
     
     --secondary: 217.2 32.6% 17.5%;
@@ -120,7 +120,7 @@
     
     --border: 217.2 32.6% 17.5% / 25%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 239 84% 67%;
+    --ring: 215 100% 50%;
 
     /* Legacy CSS Variable bindings for glassmorphic templates */
     --bg-primary: #0b0f19;
@@ -128,18 +128,18 @@
     --bg-tertiary: rgba(31, 41, 55, 0.5);
     
     --border-color: rgba(75, 85, 99, 0.25);
-    --border-glow: rgba(99, 102, 241, 0.2);
+    --border-glow: rgba(0, 71, 171, 0.2);
     
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --text-muted: #6b7280;
     
     --accent-blue: #3b82f6;
-    --accent-indigo: #6366f1;
-    --accent-purple: #8b5cf6;
+    --accent-indigo: #0066ff;
+    --accent-purple: #0047AB;
     
-    --gradient-accent: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    --gradient-glow: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 40%);
+    --gradient-accent: linear-gradient(135deg, #0047AB 0%, #3b82f6 100%);
+    --gradient-glow: radial-gradient(circle at top right, rgba(0, 71, 171, 0.15), transparent 40%);
   }
 
   body {

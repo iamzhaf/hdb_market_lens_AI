@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Layers, MapPin, TrendingUp, PieChart as PieIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -6,6 +6,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DashboardCharts({ chartData, theme }) {
   const [metricTab, setMetricTab] = useState('index');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const isDark = theme === 'dark';
   const textColor = isDark ? '#9ca3af' : '#475569';
   const gridColor = isDark ? 'rgba(75, 85, 99, 0.2)' : 'rgba(148, 163, 184, 0.2)';
@@ -16,7 +24,7 @@ export default function DashboardCharts({ chartData, theme }) {
   const flatModels = chartData.flat_models || [];
 
   // Color Palette
-  const colors = ['#6366f1', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#14b8a6', '#f43f5e'];
+  const colors = ['#0047AB', '#1e60c4', '#3b82f6', '#0077b6', '#10b981', '#f59e0b', '#ec4899', '#f43f5e'];
 
   // Option 1: Price and Transaction Trend
   const trendOption = {
@@ -28,7 +36,8 @@ export default function DashboardCharts({ chartData, theme }) {
     },
     legend: {
       data: ['Avg Resale Price', 'Transactions'],
-      textStyle: { color: textColor, fontFamily: 'Outfit' }
+      textStyle: { color: textColor, fontFamily: 'Outfit' },
+      top: '5%',
     },
     grid: {
       left: '3%',
@@ -72,7 +81,7 @@ export default function DashboardCharts({ chartData, theme }) {
         yAxisIndex: 1,
         data: trend.map(d => d.txn_count),
         itemStyle: {
-          color: isDark ? 'rgba(99, 102, 241, 0.45)' : 'rgba(99, 102, 241, 0.75)',
+          color: isDark ? 'rgba(0, 71, 171, 0.45)' : 'rgba(0, 71, 171, 0.75)',
           borderRadius: [4, 4, 0, 0]
         }
       },
@@ -80,8 +89,8 @@ export default function DashboardCharts({ chartData, theme }) {
         name: 'Avg Resale Price',
         type: 'line',
         data: trend.map(d => d.avg_price),
-        lineStyle: { width: 3, color: '#8b5cf6' },
-        itemStyle: { color: '#8b5cf6' },
+        lineStyle: { width: 2, color: '#0047AB' },
+        itemStyle: { color: '#0047AB' },
         symbol: 'circle',
         symbolSize: 6
       }
@@ -127,7 +136,7 @@ export default function DashboardCharts({ chartData, theme }) {
             x: 0, y: 0, x2: 1, y2: 0,
             colorStops: [
               { offset: 0, color: '#3b82f6' },
-              { offset: 1, color: '#6366f1' }
+              { offset: 1, color: '#0047AB' }
             ]
           },
           borderRadius: [0, 4, 4, 0]
@@ -144,18 +153,25 @@ export default function DashboardCharts({ chartData, theme }) {
       trigger: 'item',
       formatter: '{b}: {c} flats ({d}%)'
     },
-    legend: {
-      orient: 'vertical',
-      right: '5%',
-      top: 'center',
-      textStyle: { color: textColor, fontFamily: 'Outfit' }
-    },
+    legend: isMobile
+      ? {
+        orient: 'horizontal',
+        bottom: '0%',
+        left: 'center',
+        textStyle: { color: textColor, fontFamily: 'Outfit', fontSize: 10 }
+      }
+      : {
+        orient: 'vertical',
+        right: '5%',
+        top: 'center',
+        textStyle: { color: textColor, fontFamily: 'Outfit' }
+      },
     series: [
       {
         name: 'Flat Types',
         type: 'pie',
-        radius: ['45%', '75%'],
-        center: ['35%', '50%'],
+        radius: isMobile ? ['30%', '55%'] : ['45%', '75%'],
+        center: isMobile ? ['50%', '42%'] : ['35%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 8,
@@ -172,38 +188,49 @@ export default function DashboardCharts({ chartData, theme }) {
     ]
   };
 
-  // Option 4: Flat Model pie
+  // Option 4: Flat Model Bar Chart
   const flatModelsOption = {
     backgroundColor: 'transparent',
-    color: colors.slice().reverse(),
     tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c} flats ({d}%)'
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
     },
-    legend: {
-      orient: 'vertical',
+    grid: {
+      left: '3%',
       right: '5%',
-      top: 'center',
-      textStyle: { color: textColor, fontFamily: 'Outfit' }
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value',
+      axisLabel: {
+        color: textColor,
+        fontFamily: 'Outfit'
+      },
+      splitLine: { lineStyle: { color: gridColor } }
+    },
+    yAxis: {
+      type: 'category',
+      data: flatModels.map(d => d.label).reverse(),
+      axisLabel: { color: textColor, fontFamily: 'Outfit', interval: 0 },
+      axisLine: { lineStyle: { color: gridColor } }
     },
     series: [
       {
-        name: 'Flat Models',
-        type: 'pie',
-        radius: ['45%', '75%'],
-        center: ['35%', '50%'],
-        avoidLabelOverlap: false,
+        name: 'Number of Flats',
+        type: 'bar',
+        data: flatModels.map(d => d.value).reverse(),
         itemStyle: {
-          borderRadius: 8,
-          borderColor: isDark ? '#0b0f19' : '#f8fafc',
-          borderWidth: 2
-        },
-        label: { show: false },
-        labelLine: { show: false },
-        data: flatModels.map(d => ({
-          name: d.label,
-          value: d.value
-        }))
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 1, y2: 0,
+            colorStops: [
+              { offset: 0, color: '#3b82f6' },
+              { offset: 1, color: '#0047AB' }
+            ]
+          },
+          borderRadius: [0, 4, 4, 0]
+        }
       }
     ]
   };
@@ -231,8 +258,8 @@ export default function DashboardCharts({ chartData, theme }) {
         const year = item.name;
         const rate = item.value;
         const originalVal = trend.find(d => String(d.label) === String(year));
-        const priceStr = originalVal && originalVal.avg_price 
-          ? `S$${originalVal.avg_price.toLocaleString()}` 
+        const priceStr = originalVal && originalVal.avg_price
+          ? `S$${originalVal.avg_price.toLocaleString()}`
           : 'N/A';
         return `
           <div style="font-family: Outfit; padding: 4px 8px;">
@@ -282,15 +309,15 @@ export default function DashboardCharts({ chartData, theme }) {
         type: 'line',
         smooth: true,
         data: growthData.map(d => d.growth_rate),
-        lineStyle: { width: 3, color: '#a855f7' },
-        itemStyle: { color: '#a855f7' },
+        lineStyle: { width: 3, color: '#0047AB' },
+        itemStyle: { color: '#0047AB' },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(168, 85, 247, 0.35)' },
-              { offset: 1, color: 'rgba(168, 85, 247, 0.0)' }
+              { offset: 0, color: 'rgba(0, 71, 171, 0.35)' },
+              { offset: 1, color: 'rgba(0, 71, 171, 0.0)' }
             ]
           }
         },
@@ -313,11 +340,11 @@ export default function DashboardCharts({ chartData, theme }) {
   // Option 6: HDB Resale Price Index (Base 2000 = 100)
   const baseYearItem = trend.find(d => String(d.label) === '2000');
   const basePrice = baseYearItem ? baseYearItem.avg_price : null;
-  const indexData = basePrice 
+  const indexData = basePrice
     ? trend.map(d => ({
-        label: d.label,
-        index: parseFloat(((d.avg_price / basePrice) * 100).toFixed(1))
-      }))
+      label: d.label,
+      index: parseFloat(((d.avg_price / basePrice) * 100).toFixed(1))
+    }))
     : [];
 
   const indexOption = {
@@ -329,15 +356,15 @@ export default function DashboardCharts({ chartData, theme }) {
         const year = item.name;
         const indexVal = item.value;
         const originalVal = trend.find(d => String(d.label) === String(year));
-        const priceStr = originalVal && originalVal.avg_price 
-          ? `S$${originalVal.avg_price.toLocaleString()}` 
+        const priceStr = originalVal && originalVal.avg_price
+          ? `S$${originalVal.avg_price.toLocaleString()}`
           : 'N/A';
         return `
           <div style="font-family: Outfit; padding: 4px 8px;">
             <strong style="display: block; margin-bottom: 4px; color: ${isDark ? '#fff' : '#0f172a'}">${year}</strong>
-            <div style="display: flex; justify-content: space-between; gap: 16px; margin-bottom: 2px;">
+            <div style="display: flex; justify-content: justify; gap: 16px; margin-bottom: 2px;">
               <span style="color: ${textColor}">Price Index:</span>
-              <strong style="color: #3b82f6">${indexVal}</strong>
+              <strong style="color: #0047AB">${indexVal}</strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 16px;">
               <span style="color: ${textColor}">Average Price:</span>
@@ -380,15 +407,15 @@ export default function DashboardCharts({ chartData, theme }) {
         type: 'line',
         smooth: true,
         data: indexData.map(d => d.index),
-        lineStyle: { width: 3, color: '#3b82f6' },
-        itemStyle: { color: '#3b82f6' },
+        lineStyle: { width: 3, color: '#0047AB' },
+        itemStyle: { color: '#0047AB' },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(59, 130, 246, 0.35)' },
-              { offset: 1, color: 'rgba(59, 130, 246, 0.0)' }
+              { offset: 0, color: 'rgba(0, 71, 171, 0.35)' },
+              { offset: 1, color: 'rgba(0, 71, 171, 0.0)' }
             ]
           }
         },
@@ -410,20 +437,20 @@ export default function DashboardCharts({ chartData, theme }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-        <Card className="bg-card/60 border-border backdrop-blur-md">
-          <CardHeader className="border-b border-border pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
-              <TrendingUp size={18} className="text-muted-foreground" />
-              <span>Market Resale Trend (1990 - 2026)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[350px] w-full pt-4">
-            <ReactECharts option={trendOption} style={{ height: '100%', width: '100%' }} />
-          </CardContent>
-        </Card>
+      {/* <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6"> */}
+      <Card className="bg-card/60 border-border backdrop-blur-md">
+        <CardHeader className="border-b border-border pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+            <TrendingUp size={18} className="text-muted-foreground" />
+            <span>Market Resale Trend (1990 - 2026)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="h-[350px] w-full pt-4">
+          <ReactECharts option={trendOption} style={{ height: '100%', width: '100%' }} />
+        </CardContent>
+      </Card>
 
-        <Card className="bg-card/60 border-border backdrop-blur-md">
+      {/* <Card className="bg-card/60 border-border backdrop-blur-md">
           <CardHeader className="border-b border-border pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <MapPin size={18} className="text-muted-foreground" />
@@ -433,16 +460,16 @@ export default function DashboardCharts({ chartData, theme }) {
           <CardContent className="h-[350px] w-full pt-4">
             <ReactECharts option={townsOption} style={{ height: '100%', width: '100%' }} />
           </CardContent>
-        </Card>
-      </div>
+        </Card> */}
+      {/* </div> */}
 
       <Card className="bg-card/60 border-border backdrop-blur-md">
         <CardHeader className="border-b border-border pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
             <TrendingUp size={18} className="text-muted-foreground" />
             <span>
-              {metricTab === 'index' 
-                ? 'HDB Resale Price Index (Base 2000 = 100)' 
+              {metricTab === 'index'
+                ? 'HDB Resale Price Index (Base 2000 = 100)'
                 : 'YoY Growth Rate of Average Resale Price (1991 - 2026)'}
             </span>
           </CardTitle>
@@ -454,10 +481,10 @@ export default function DashboardCharts({ chartData, theme }) {
           </Tabs>
         </CardHeader>
         <CardContent className="h-[280px] w-full pt-4">
-          <ReactECharts 
-            option={metricTab === 'index' ? indexOption : growthOption} 
+          <ReactECharts
+            option={metricTab === 'index' ? indexOption : growthOption}
             key={metricTab}
-            style={{ height: '100%', width: '100%' }} 
+            style={{ height: '100%', width: '100%' }}
           />
         </CardContent>
       </Card>
