@@ -432,7 +432,7 @@ function ToolExecutionTrace({ call, resp, theme }) {
                     <TableRow key={rIdx} className="hover:bg-secondary/20 border-b border-border/50">
                       {Object.keys(data[0] || {}).map((col, cIdx) => (
                         <TableCell key={cIdx} className="px-2 py-1 h-7 text-foreground">
-                          {row[col] !== null ? String(row[col]) : 'NULL'}
+                          {row[col] !== null ? formatTableCell(col, row[col]) : 'NULL'}
                         </TableCell>
                       ))}
                     </TableRow>
