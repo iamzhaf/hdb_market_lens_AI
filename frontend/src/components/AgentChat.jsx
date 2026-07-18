@@ -8,6 +8,272 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { API_URL } from '../config';
 
+// Helper to parse markdown tables from message text
+function parseMarkdownTablesAndText(text) {
+  if (!text) return [];
+  
+  const lines = text.split('\n');
+  const blocks = [];
+  let currentTable = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    // A table row must start with | and end with |
+    const isTableLine = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 1;
+
+    if (isTableLine) {
+      const isSeparator = trimmed.includes('---') || trimmed.includes('-:-') || trimmed.includes(':---');
+      
+      if (currentTable) {
+        if (isSeparator) {
+          continue;
+        }
+        // Extract cell values
+        const cells = line.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+        currentTable.rows.push(cells);
+      } else {
+        // Look ahead to check if the next line is a separator line
+        const nextLine = lines[i + 1];
+        const nextTrimmed = nextLine ? nextLine.trim() : '';
+        const nextIsSeparator = nextTrimmed.startsWith('|') && (nextTrimmed.includes('---') || nextTrimmed.includes('-:-') || nextTrimmed.includes(':---'));
+        
+        if (nextIsSeparator) {
+          const headers = line.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+          currentTable = {
+            headers: headers,
+            rows: []
+          };
+        } else {
+          blocks.push({ type: 'text', content: line });
+        }
+      }
+    } else {
+      if (currentTable) {
+        blocks.push({ type: 'table', content: currentTable });
+        currentTable = null;
+      }
+      blocks.push({ type: 'text', content: line });
+    }
+  }
+
+  if (currentTable) {
+    blocks.push({ type: 'table', content: currentTable });
+  }
+
+  // Combine consecutive text blocks to maintain paragraphs
+  const optimizedBlocks = [];
+  let currentTextGroup = [];
+
+  blocks.forEach(block => {
+    if (block.type === 'text') {
+      currentTextGroup.push(block.content);
+    } else {
+      if (currentTextGroup.length > 0) {
+        optimizedBlocks.push({ type: 'text', content: currentTextGroup.join('\n') });
+        currentTextGroup = [];
+      }
+      optimizedBlocks.push(block);
+    }
+  });
+
+  if (currentTextGroup.length > 0) {
+    optimizedBlocks.push({ type: 'text', content: currentTextGroup.join('\n') });
+  }
+
+  return optimizedBlocks;
+}
+
+// Helper to format table cells with appropriate units
+function formatTableCell(headerName, value) {
+  if (value === null || value === undefined) return '';
+  const strVal = String(value).trim();
+  const lowerHeader = headerName.toLowerCase();
+  
+  // If the cell value is already formatted or contains letters, return as is
+  if (/[S$]/i.test(strVal) || /sqm/i.test(strVal) || isNaN(Number(strVal.replace(/[^0-9.-]/g, '')))) {
+    return strVal;
+  }
+  
+  const num = Number(strVal.replace(/[^0-9.-]/g, ''));
+  
+  // Price / Amount formatting
+  if (lowerHeader.includes('price') || lowerHeader.includes('amount') || lowerHeader.includes('volume') || lowerHeader.includes('cost') || lowerHeader.includes('value')) {
+    return new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD', maximumFractionDigits: 0 }).format(num);
+  }
+  
+  // Area / Sqm formatting
+  if (lowerHeader.includes('area') || lowerHeader.includes('sqm') || lowerHeader.includes('size')) {
+    return `${new Intl.NumberFormat('en-SG').format(num)} sqm`;
+  }
+  
+  // Default numeric formatting
+  return new Intl.NumberFormat('en-SG').format(num);
+}
+
+// Component to render parsed markdown tables interactively
+function InteractiveMarkdownTable({ tableData, theme }) {
+  const isDark = theme === 'dark';
+  const headers = tableData.headers;
+  const rows = tableData.rows;
+
+  // Convert array-of-arrays representation to array of objects to identify label/numeric fields
+  const data = rows.map(row => {
+    const obj = {};
+    headers.forEach((header, idx) => {
+      const valStr = row[idx] || '';
+      // Try to parse clean float number for charting: remove $, %, sqm, commas
+      const cleanVal = valStr.replace(/[$,]/g, '').replace(/sqm/i, '').replace(/%/g, '').trim();
+      const num = Number(cleanVal);
+      obj[header] = !isNaN(num) && cleanVal !== '' ? num : valStr;
+    });
+    return obj;
+  });
+
+  const isQueryResponse = data.length > 0;
+  let labelKey = null;
+  let valueKeys = [];
+
+  if (isQueryResponse) {
+    headers.forEach(h => {
+      const val = data[0][h];
+      if (typeof val === 'number') {
+        valueKeys.push(h);
+      } else if (typeof val === 'string' || val === null) {
+        if (!labelKey) labelKey = h;
+      }
+    });
+
+    if (!labelKey && headers.length > 1) {
+      labelKey = headers.find(h => !valueKeys.includes(h));
+    }
+    if (!labelKey) labelKey = headers[0];
+  }
+
+  const isChartable = isQueryResponse && valueKeys.length > 0;
+  const [activeTab, setActiveTab] = useState(isChartable ? 'chart' : 'table');
+
+  useEffect(() => {
+    setActiveTab(isChartable ? 'chart' : 'table');
+  }, [isChartable]);
+
+  const getChartOption = () => {
+    if (!isChartable) return null;
+    const textColor = isDark ? '#9ca3af' : '#475569';
+    const gridColor = isDark ? 'rgba(75, 85, 99, 0.2)' : 'rgba(148, 163, 184, 0.2)';
+    const colors = ['#0047AB', '#1e60c4', '#3b82f6', '#0077b6', '#10b981'];
+
+    const isTime = labelKey.toLowerCase().includes('month') ||
+                   labelKey.toLowerCase().includes('year') ||
+                   labelKey.toLowerCase().includes('date');
+
+    const xAxisData = data.map(d => d[labelKey]);
+    const series = valueKeys.map((vk) => ({
+      name: vk.replace(/_/g, ' ').toUpperCase(),
+      type: isTime ? 'line' : 'bar',
+      data: data.map(d => d[vk]),
+      smooth: true,
+      itemStyle: {
+        borderRadius: isTime ? 0 : [4, 4, 0, 0]
+      }
+    }));
+
+    return {
+      backgroundColor: 'transparent',
+      color: colors,
+      tooltip: {
+        trigger: 'axis',
+        textStyle: { fontFamily: 'Outfit' }
+      },
+      legend: {
+        data: valueKeys.map(vk => vk.replace(/_/g, ' ').toUpperCase()),
+        textStyle: { color: textColor, fontFamily: 'Outfit', fontSize: 10 }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '8%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+        axisLabel: {
+          color: textColor,
+          fontFamily: 'Outfit',
+          fontSize: 9,
+          rotate: data.length > 8 ? 30 : 0
+        },
+        axisLine: { lineStyle: { color: gridColor } }
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { color: textColor, fontFamily: 'Outfit', fontSize: 9 },
+        splitLine: { lineStyle: { color: gridColor } }
+      },
+      series: series
+    };
+  };
+
+  return (
+    <div className="my-3 bg-secondary/10 border border-border rounded-lg p-3 flex flex-col gap-2 max-w-full overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex justify-between items-center border-b border-border pb-2 mb-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+            <TableIcon size={14} />
+            <span>Interactive Table View</span>
+          </div>
+          <TabsList className="bg-secondary/40 p-1 h-7">
+            {isChartable && (
+              <TabsTrigger value="chart" className="text-[10px] px-2 py-0.5 flex items-center gap-1 cursor-pointer">
+                <BarChart2 size={10} />
+                <span>Chart</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="table" className="text-[10px] px-2 py-0.5 flex items-center gap-1 cursor-pointer">
+              <TableIcon size={10} />
+              <span>Table</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="chart" className="mt-0">
+          {isChartable && (
+            <div className="h-60 w-full py-1">
+              <ReactECharts option={getChartOption()} style={{ height: '100%', width: '100%' }} />
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="table" className="mt-0">
+          <div className="max-h-[250px] overflow-auto border border-border rounded-md bg-card/40">
+            <Table className="text-[11px]">
+              <TableHeader className="bg-secondary/30 sticky top-0">
+                <TableRow className="hover:bg-transparent border-b border-border">
+                  {headers.map((col, idx) => (
+                    <TableHead key={idx} className="h-7 px-2 py-1 font-semibold text-muted-foreground">{col}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row, rIdx) => (
+                  <TableRow key={rIdx} className="hover:bg-secondary/20 border-b border-border/50">
+                    {headers.map((col, cIdx) => (
+                      <TableCell key={cIdx} className="px-2 py-1 h-7 text-foreground">
+                        {formatTableCell(col, row[cIdx])}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
 // Sub-component to manage tab state for each tool execution trace individually
 function ToolExecutionTrace({ call, resp, theme }) {
   const isDark = theme === 'dark';
@@ -281,34 +547,47 @@ export default function AgentChat({ messages, onSendMessage, onClearChat, loadin
           </pre>
         );
       } else {
-        const paragraphs = part.split('\n');
-        return paragraphs.map((para, paraIdx) => {
-          if (!para.trim()) return null;
-
-          const boldParts = para.split('**');
-          const inlineRender = boldParts.map((bp, bpIdx) => {
-            if (bpIdx % 2 === 1) {
-              return <strong key={bpIdx} className="font-bold text-foreground">{bp}</strong>;
-            }
-            return bp;
-          });
-
-          if (para.trim().startsWith('- ')) {
+        const blocks = parseMarkdownTablesAndText(part);
+        return blocks.map((block, bIdx) => {
+          if (block.type === 'table') {
             return (
-              <ul key={`${paraIdx}`} className="pl-5 my-1 list-disc">
-                <li className="text-sm">{inlineRender.slice(1)}</li>
-              </ul>
+              <InteractiveMarkdownTable
+                key={bIdx}
+                tableData={block.content}
+                theme={theme}
+              />
             );
           }
 
-          if (para.trim().startsWith('### ')) {
-            return <h4 key={paraIdx} className="text-sm font-semibold mt-4 mb-2 text-primary">{para.replace('### ', '')}</h4>;
-          }
-          if (para.trim().startsWith('## ')) {
-            return <h3 key={paraIdx} className="text-base font-bold mt-5 mb-2 text-primary">{para.replace('## ', '')}</h3>;
-          }
+          const paragraphs = block.content.split('\n');
+          return paragraphs.map((para, paraIdx) => {
+            if (!para.trim()) return null;
 
-          return <p key={paraIdx} className="mb-2 text-sm leading-relaxed">{inlineRender}</p>;
+            const boldParts = para.split('**');
+            const inlineRender = boldParts.map((bp, bpIdx) => {
+              if (bpIdx % 2 === 1) {
+                return <strong key={bpIdx} className="font-bold text-foreground">{bp}</strong>;
+              }
+              return bp;
+            });
+
+            if (para.trim().startsWith('- ')) {
+              return (
+                <ul key={`${bIdx}-${paraIdx}`} className="pl-5 my-1 list-disc">
+                  <li className="text-sm">{inlineRender.slice(1)}</li>
+                </ul>
+              );
+            }
+
+            if (para.trim().startsWith('### ')) {
+              return <h4 key={`${bIdx}-${paraIdx}`} className="text-sm font-semibold mt-4 mb-2 text-primary">{para.replace('### ', '')}</h4>;
+            }
+            if (para.trim().startsWith('## ')) {
+              return <h3 key={`${bIdx}-${paraIdx}`} className="text-base font-bold mt-5 mb-2 text-primary">{para.replace('## ', '')}</h3>;
+            }
+
+            return <p key={`${bIdx}-${paraIdx}`} className="mb-2 text-sm leading-relaxed">{inlineRender}</p>;
+          });
         });
       }
     });
