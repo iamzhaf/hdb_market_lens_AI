@@ -91,11 +91,12 @@ function formatTableCell(headerName, value) {
   const lowerHeader = headerName.toLowerCase();
   
   // If the cell value is already formatted or contains letters, return as is
-  if (/[S$]/i.test(strVal) || /sqm/i.test(strVal) || isNaN(Number(strVal.replace(/[^0-9.-]/g, '')))) {
+  const cleaned = strVal.replace(/[^0-9.-]/g, '');
+  if (cleaned === '' || isNaN(Number(cleaned)) || /[a-zA-Z]/i.test(strVal)) {
     return strVal;
   }
   
-  const num = Number(strVal.replace(/[^0-9.-]/g, ''));
+  const num = Number(cleaned);
   
   // Price / Amount formatting
   if (lowerHeader.includes('price') || lowerHeader.includes('amount') || lowerHeader.includes('volume') || lowerHeader.includes('cost') || lowerHeader.includes('value')) {
